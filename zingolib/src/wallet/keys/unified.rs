@@ -30,25 +30,30 @@ use super::{
     get_zaddr_from_bip39seed, ToBase58Check,
 };
 
-/// TODO: Add Doc Comment Here!
+/// Represents the capabilities associated with a particular key or entity.
+///
+/// This enum can be used to specify whether a key has viewing or spending capabilities,
+/// or if it has no capabilities at all.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum Capability<ViewingKeyType, SpendKeyType> {
-    /// TODO: Add Doc Comment Here!
+    /// Indicates that the key has no capabilities.
     None,
-    /// TODO: Add Doc Comment Here!
+
+    /// Indicates that the key has viewing capabilities.
     View(ViewingKeyType),
-    /// TODO: Add Doc Comment Here!
+
+    /// Indicates that the key has spending capabilities.
     Spend(SpendKeyType),
 }
 
 impl<V, S> Capability<V, S> {
-    /// TODO: Add Doc Comment Here!
+    /// Indicates wheather it has spending rights
     pub fn can_spend(&self) -> bool {
         matches!(self, Capability::Spend(_))
     }
 
-    /// TODO: Add Doc Comment Here!
+    /// Indicates whether it has viewing rights
     pub fn can_view(&self) -> bool {
         match self {
             Capability::None => false,
@@ -57,7 +62,7 @@ impl<V, S> Capability<V, S> {
         }
     }
 
-    /// TODO: Add Doc Comment Here!
+    /// Prints a readble explanation of the capability
     pub fn kind_str(&self) -> &'static str {
         match self {
             Capability::None => "No key",
@@ -67,20 +72,22 @@ impl<V, S> Capability<V, S> {
     }
 }
 
-/// TODO: Add Doc Comment Here!
+/// Represents the capabilities of a wallet, encompassing transparent, sapling, and orchard address types.
 #[derive(Debug)]
 pub struct WalletCapability {
-    /// TODO: Add Doc Comment Here!
+    /// Capabilities related to transparent addresses, allowing viewing and spending with the associated extended keys.
     pub transparent: Capability<
         super::extended_transparent::ExtendedPubKey,
         super::extended_transparent::ExtendedPrivKey,
     >,
-    /// TODO: Add Doc Comment Here!
+
+    /// Capabilities related to sapling addresses, enabling viewing and spending with the provided viewing and spending keys.
     pub sapling: Capability<
         sapling_crypto::zip32::DiversifiableFullViewingKey,
         sapling_crypto::zip32::ExtendedSpendingKey,
     >,
-    /// TODO: Add Doc Comment Here!
+
+    /// Capabilities related to orchard addresses, allowing viewing and spending using the orchard viewing and spending keys.
     pub orchard: Capability<orchard::keys::FullViewingKey, orchard::keys::SpendingKey>,
 
     transparent_child_addresses: Arc<append_only_vec::AppendOnlyVec<(usize, TransparentAddress)>>,
@@ -89,6 +96,7 @@ pub struct WalletCapability {
     // Because of this, the index isn't necessarily equal to addresses.len()
     addresses_write_lock: AtomicBool,
 }
+
 impl Default for WalletCapability {
     fn default() -> Self {
         Self {
