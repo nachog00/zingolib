@@ -237,52 +237,48 @@ impl WalletCapability {
             return Err("addresses_write_lock collision!".to_string());
         }
         let previous_num_addresses = self.addresses.len();
-        let orchard_receiver = if desired_receivers.orchard {
-            let fvk: orchard::keys::FullViewingKey = match self.try_into() {
-                Ok(viewkey) => viewkey,
+
+        let orchard_receiver = match desired_receivers.orchard {
+            true => match self.generate_orchard_receiver() {
+                Ok(Some(orchard_receiver)) => Some(orchard_receiver),
+                Ok(None) => None,
                 Err(e) => {
                     self.addresses_write_lock
                         .swap(false, atomic::Ordering::Release);
                     return Err(e);
                 }
-            };
-            Some(fvk.address_at(self.addresses.len(), orchard::keys::Scope::External))
-        } else {
-            None
+            },
+            false => None,
         };
 
         // produce a Sapling address to increment Sapling diversifier index
-        let sapling_receiver = if desired_receivers.sapling && self.sapling.can_view() {
-            let mut sapling_diversifier_index = DiversifierIndex::new();
-            let mut address;
-            let mut count = 0;
-            let fvk: sapling_crypto::zip32::DiversifiableFullViewingKey =
-                self.try_into().expect("to create an fvk");
-            loop {
-                (sapling_diversifier_index, address) = fvk
-                    .find_address(sapling_diversifier_index)
-                    .expect("Diversifier index overflow");
-                sapling_diversifier_index
-                    .increment()
-                    .expect("diversifier index overflow");
-                if count == self.addresses.len() {
-                    break;
+        let sapling_receiver = match desired_receivers.sapling {
+            true => match self.generate_sapling_receiver() {
+                Ok(Some(sapling_receiver)) => Some(sapling_receiver),
+                Ok(None) => None,
+                Err(e) => {
+                    self.addresses_write_lock
+                        .swap(false, atomic::Ordering::Release);
+                    return Err(e);
                 }
-                count += 1;
-            }
-            Some(address)
-        } else {
-            None
+            },
+            false => None,
         };
 
-        let transparent_receiver = match self.generate_transparent_receiver(desired_receivers) {
-            Ok(Some(transparent_receiver)) => Some(transparent_receiver),
-            Ok(None) => None,
-            Err(e) => {
-                self.addresses_write_lock
-                    .swap(false, atomic::Ordering::Release);
-                return Err(e);
-            }
+        let transparent_receiver = match desired_receivers.transparent {
+            true => match desired_receivers.transparent {
+                true => match self.generate_transparent_receiver() {
+                    Ok(Some(transparent_receiver)) => Some(transparent_receiver),
+                    Ok(None) => None,
+                    Err(e) => {
+                        self.addresses_write_lock
+                            .swap(false, atomic::Ordering::Release);
+                        return Err(e);
+                    }
+                },
+                false => None,
+            },
+            false => None,
         };
 
         let ua = UnifiedAddress::from_receivers(
@@ -313,17 +309,55 @@ impl WalletCapability {
         Ok(ua)
     }
 
+    /// Generates a sapling receiver. Returns None if the wallet is not capable of viewing Sapling keys
+    pub fn generate_sapling_receiver(
+        &self,
+    ) -> Result<Option<sapling_crypto::PaymentAddress>, String> {
+        if self.sapling.can_view() {
+            let mut sapling_diversifier_index = DiversifierIndex::new();
+            let mut address;
+            let mut count = 0;
+            let fvk: sapling_crypto::zip32::DiversifiableFullViewingKey =
+                self.try_into().expect("to create an fvk");
+            loop {
+                (sapling_diversifier_index, address) = fvk
+                    .find_address(sapling_diversifier_index)
+                    .expect("Diversifier index overflow");
+                sapling_diversifier_index
+                    .increment()
+                    .expect("diversifier index overflow");
+                if count == self.addresses.len() {
+                    break;
+                }
+                count += 1;
+            }
+            Ok(Some(address))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Generates an orchard receiver
+    pub fn generate_orchard_receiver(&self) -> Result<Option<orchard::Address>, String> {
+        let fvk: orchard::keys::FullViewingKey = match self.try_into() {
+            Ok(viewkey) => viewkey,
+            Err(e) => {
+                self.addresses_write_lock
+                    .swap(false, atomic::Ordering::Release);
+                return Err(e);
+            }
+        };
+        Ok(Some(fvk.address_at(
+            self.addresses.len(),
+            orchard::keys::Scope::External,
+        )))
+    }
+
     /// Generates a transparent receiver if the wallet is capable of it.
     ///
     /// If the wallet is not capable of generating a transparent receiver,
     /// `None` is returned.
-    pub fn generate_transparent_receiver(
-        &self,
-        desired_receivers: ReceiverSelection,
-    ) -> Result<Option<secp256k1::PublicKey>, String> {
-        if !desired_receivers.transparent {
-            return Ok(None);
-        }
+    pub fn generate_transparent_receiver(&self) -> Result<Option<secp256k1::PublicKey>, String> {
         let child_index = KeyIndex::from_index(self.addresses.len() as u32);
         let child_pk = match &self.transparent {
             Capability::Spend(ext_sk) => {
