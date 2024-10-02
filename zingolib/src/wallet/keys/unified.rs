@@ -141,6 +141,7 @@ impl ReadableWriteable<()> for ReceiverSelection {
             orchard: receivers & 0b1 != 0,
             sapling: receivers & 0b10 != 0,
             transparent: receivers & 0b100 != 0,
+            tex: receivers & 0b1000 != 0,
         })
     }
 
@@ -155,6 +156,9 @@ impl ReadableWriteable<()> for ReceiverSelection {
         };
         if self.transparent {
             receivers |= 0b100;
+        };
+        if self.tex {
+            receivers |= 0b1000;
         };
         writer.write_u8(receivers)?;
         Ok(())
@@ -537,6 +541,7 @@ impl WalletCapability {
             orchard: self.orchard.can_view(),
             sapling: self.sapling.can_view(),
             transparent: self.transparent.can_view(),
+            tex: self.tex.can_view(),
         }
     }
 }
