@@ -116,16 +116,19 @@ impl crate::wallet::LightWallet {
         self.transaction_context.key.clone()
     }
 }
-/// TODO: Add Doc Comment Here!
+
+/// A selection made on the Reciever type
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[non_exhaustive]
 pub struct ReceiverSelection {
-    /// TODO: Add Doc Comment Here!
+    /// An Orchard address type
     pub orchard: bool,
-    /// TODO: Add Doc Comment Here!
+    /// A Sapling address type
     pub sapling: bool,
-    /// TODO: Add Doc Comment Here!
+    /// A Transparent address type
     pub transparent: bool,
+    /// A TEX address type
+    pub tex: bool,
 }
 
 impl ReadableWriteable<()> for ReceiverSelection {
