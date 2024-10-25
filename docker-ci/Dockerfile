@@ -35,7 +35,7 @@ RUN git clone https://github.com/zcash/lightwalletd \
 # Build zcashd and fetch params
 RUN git clone https://github.com/zcash/zcash.git \
     && cd zcash/ \
-    && git checkout v5.6.1 \
+    && git checkout v6.0.0 \
     && ./zcutil/fetch-params.sh \
     && ./zcutil/clean.sh \
     && ./zcutil/build.sh -j$(nproc)
