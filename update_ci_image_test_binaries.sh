@@ -68,7 +68,7 @@ sed -i "s/ZCASH_TAG=.*/ZCASH_TAG=$LATEST_ZCASH_TAG/g" docker-ci/Dockerfile
 cd docker-ci
 
 # Build the Docker image (commented out)
-# docker build -t zingodevops/ci-build:$NEW_IMAGE_VERSION .
+docker build -t zingodevops/ci-build:$NEW_IMAGE_VERSION .
 echo "Building Docker image: docker build -t zingodevops/ci-build:$NEW_IMAGE_VERSION ."
 
 # Log in to Docker Hub (commented out)
@@ -76,7 +76,7 @@ echo "Building Docker image: docker build -t zingodevops/ci-build:$NEW_IMAGE_VER
 echo "Logging in to Docker Hub: docker login"
 
 # Push the Docker image to Docker Hub (commented out)
-# docker push zingodevops/ci-build:$NEW_IMAGE_VERSION
+docker push zingodevops/ci-build:$NEW_IMAGE_VERSION
 echo "Pushing Docker image to Docker Hub: docker push zingodevops/ci-build:$NEW_IMAGE_VERSION"
 
 # Echo dynamic information with links
@@ -85,7 +85,7 @@ echo "  - Image: zingodevops/ci-build:$NEW_IMAGE_VERSION"
 echo "  - Link: https://hub.docker.com/r/zingodevops/ci-build/tags?name=$NEW_IMAGE_VERSION"
 
 # GitHub workflow files update (commented out)
-# sed -i "s/zingodevops\/ci-build:.*/zingodevops\/ci-build:$NEW_IMAGE_VERSION/g" .github/workflows/*.{yml,yaml}
+sed -i "s/zingodevops\/ci-build:.*/zingodevops\/ci-build:$NEW_IMAGE_VERSION/g" .github/workflows/*.{yml,yaml}
 
 echo "GitHub workflow files updated:"
 echo "  - Repository: https://github.com/zingolabs/zingolib/actions"
