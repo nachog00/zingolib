@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
-    branches: [stable, dev]
+    branches: [stable, dev, one_runner_all_jobs, one_runner_split_jobs, many_runners_all_jobs, many_runners_split_jobs]
   workflow_dispatch:
 
 jobs:
