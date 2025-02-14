@@ -1,8 +1,8 @@
 name: CI (Nightly)
 
-on:
-  schedule:
-    - cron: '30 3 * * *'
+on: 
+  # schedule:
+  #   - cron: '30 3 * * *'
   workflow_dispatch:
 
 jobs:
