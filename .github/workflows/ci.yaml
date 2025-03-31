@@ -46,6 +46,13 @@ jobs:
       - name: Run doc tests
         run: cargo test --doc
 
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "target/nextest/ci/junit.xml"
+        if: always()
+
+
   test:
     uses: ./.github/workflows/test.yaml
     with:
